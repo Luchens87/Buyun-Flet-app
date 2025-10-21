@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyun Flet App</title>
+    <style>
+        :root {
+            --primary-color: #ff6600; /* naranja de la marca */
+            --secondary-color: #333333; /* gris oscuro */
+            --background-color: #ffffff;
+            --border-color: #dddddd;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+        }
+
+        /* Layout the header so that the logo is centered and the navigation sits on the right */
+        header {
+            /* Use relative positioning to allow absolute positioning of the nav */
+            position: relative;
+            padding: 10px 20px;
+            background-color: var(--background-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Center the logo horizontally and scale it */
+        header img {
+            display: block;
+            margin: 0 auto;
+            width: 200px; /* increase to make the logo more visible */
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* Hide the logo by default. It will be made visible once the page finishes loading and
+           the correct logo file is applied via JavaScript. This prevents showing the partial
+           base64 logo before the script runs. */
+        #logo {
+            visibility: hidden;
+        }
+
+        /* Position the navigation on the right side of the header */
+        header nav {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        section {
+            display: none;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 600px;
+        }
+
+        input, textarea, select {
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+        }
+
+        #track-result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <!--
+            Reemplazamos el src con una URI de datos base64 para garantizar que el logo
+            se muestre correctamente sin depender de archivos externos. La imagen se
+            ha redimensionado a 200 px de ancho para optimizar el tamaño del HTML.
+        -->
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAB0mElEQVR4nO2ddZwd1fn/3+eMXF3fTTYeJAkJgRDcghYrWooUqEGdOi11F2rf2q8tUqVUKMVqUMHdLRACMeLJ7mZ998rMnHN+f8zM3bubTbLZbAz209ctmyszZ2bO5zz+HGGMMYxiFKMYFHJnD2AUo9iVMUqQUYxiMxglyChGsRmMEmQUo9gMRgkyilFsBqMEGcUoNoNRgoxiFJvBKEFGMYrNYJQgoxjFZmDv7AG8odAvacGA6ft7c+kMouz/4//0/Vts9P1RjBxGCbI9YAwhAeJpL8KJ3G8yi7LJ3u/PrT+X0RjKiLTRuUYxXIjRXKxtRD8ybH5yGt8jKOQwXhFTzGPyXah8N36+Fy/fiyoW0EqXDiMtC8dNYidS2Kk0djqLTGQwbgqRyGAlU8hEatNj0zocmxB9YxvFVmGUIMNBtGqHZNjYjAt6O/Fb1qBbV9KzZjG59StxOjcgNjTjtzYhc71Ir4gMejAmj9YBOlCgFehQ3ZICpDBIITGWg7AlwnIwtoMhgXRqsGob8CdMwW+YSKJhPBUT98SqmYhdNx6nsnaQcetw7CUSjxJmSxglyFBhNMYYhLT6va18H795BYU1i+h+7RVyy18luWoRzprXcLs3oINetBVNeAm2FXpGpBBoBBqDQCCFIPwfYAQGg5aRbWJARzaLxoAwaEBpCBQYRTguJ41JVGLGTSEYNwVn4gyy0w7GnTSdxLhJ2G6y/zVpFZ59VCXbJEYJsjnEK66UxKutBrymlaglz9D98sP0LJ2Pu3oJyea1mCBAIpCWxJU2GkFCgEWAFqGdoGQ0yQltdGGIKQJGhxSJWSHiL8XjCe0WJUHZNgaNrcHSILWFCCw0Gl/mMNrgKfDcLLq6ET1uMpk9D8Dd9zjcGbNJjJ+CVSb9jFYRUUYdm+UYJchAGBNKirJV1QC9KxaSf/khep97HPXys6RblyGDbqQDtrBIakmARkiBEaCNQQsLqQy2Dld9IwzGhGQTgI7fEyBN5HOPyUF4nP7+rdDekcYCYwMaAUhj0FJHvxUYCQILC4M2hgCDpxQqAO3UUqitw+w9m8ycN5Hc70gye8/Gtuyy69cIIUelCqME6YMxZdIiRG7ly+RfuJ/eZx+muOBhUu2rSBqwLYFthxNKoTFCIoxBAMLoaMILhDYYIdBYxOIgnnLCaLSAIDqfNAbLaEAjo29qQUntEsYgjUFg0EKgSgQCInUMIzBCIAzYse8AUFKipUQIQ1IZhB8Q+NBLiq6aCYiZc6k46Dgyh7yJiknT++6JDh0Gb2SpMkqQAZMgyHfT+dwjFB/6F/qZu5AdryGUTzIBtrSjSRev1ptGLHu0ACMsQn9Sf2kgMdhGIkxse4SSRmhBIA1Kht8q/SLyDEsDlgn/Gx+1tNYbg0YiMSHfo99hDEYKtNBII7CxsIwk0IairygY8OqmIA88jtS806mcexxONjL0TXS98o1HlDcuQXTshQqnVrFpJb0P3Ub3gzfhv7aQ6lwPKSGwHYlvaQKjopV8a9SO8NZawsJEqpsWoIXEILDQ2JGdo4WFLyRIGyMkjlIklAI0GoGSEh9QBoQOsJQe1ETRFgSWjZQCG3CULqlvAkPREhgjkUZHjgCBERYYgV00KOVRdG28KTORR59L5QmXkJ0wLTpBpH6+gYjyxiOI0eF/I4nRu+R52u6/Ce+hv5Na/QoV0mDSFnnbEBhIBQbXD4kRruhDc46GEgG0sNHaQgoRyYJIx5cyWtUNEh26eNFoP/RKaSAQEFguStoE0sK4CaxMBSJbEcY/hAjdY8YgtMYoTeDlMN3tBLkeUArbBNjKx1aRLLLAssGSAm0shOWijYUWFp4QuKZINiiiiopOCR31+5A9+lzqTr6Q7LT9o3u4sTr6esUbhyADVr+epfPZ8Pfr4JGbSXW14CQAy0Uoga0DDDr0MAlBICSC0EaQBvQQjdfIpEYIO1LjDCIKLBoVoFToaQqEwE9lIVFFevx0ZE0dxVQWsdds3IkzMG4ShIWTSJKqrsOurEMkMggZWiiGKJquNLrQi9e+nnxnK0GxgKUVdLeTX74Ir3ktqdwGgrWLKXa2kPDzuPkeHCBhgRQOxrbQUuNLsBCYgkIVFYW6MfiHnUTN6R+ket+jSvc09La9fony+idI7JWJ4hfF116m6c7raX/or1S1raDOBkva+FqgsZFG4mgfWwUhGaTElzI0giOvkRZDvGVC4GhBQoNWmpzW5Az4yQx+ZTVO41SSe8xBj51EYtaRUNVIdvxULNfdLiG8eNT5lrUUO1vQzSsovvw4TssK8kteQm5Yi9vdiiNC6SATFtoxaAS2r/Hzit50A/Lws6g59/1kZx4aHnCAuvp6wuubIFqX1IBCyzrW3fl79J2/IrthGa7rYtkWRgVgQJZ5mLQ0aGEQRiO0xNYOBo2yVLRai3A+xG5VEWkcsQIWuXqNCgg8KBqJV91AMGEmidlHk5x+AJlp++PWT8BOpjced1n6Sv+HI6I5uKWJGErLAb/c7CQu9nTgNS2n56UnyS98GrHwcRJNS7CDPFpA0k2QMALpB/T4Aa0143BPuIiGM99LZurM6MYpGBBI3d3x+iRImY6sC9203v1XOm/7JdbKF6l2AlwJKDAmnDBGKBCqNO+UIDSmCY1bO7BCNgiFNBJhIJACIyRGWaFbVyoS2iCDgHwAPbZLobYes+8xpA48lYp95pKeNB1no2h27N+KUg13xEocq5vxvwec0wDF1nUUFz1D/rmHKb74NM6KJ3GK3bg2uI6LbyxyRU2hYQrJM99L7RmX4VbW9SVovk6kyeuPIGVSo/uFR2n+81XIF+6hSvnYCRujA6xoZTaRqiQIYwfCGCQCJUKSGASWMZGqZQgkCOPgaAsrUPj4aNfGWBJR9FBFg1c1Bm/6oSSOPoPM3OPITJ7Rf73XofdI7GoJhCaWWGajIKFfyJF/5Um6n/ovuafuIrViPlkVkLATBNrQIgz+9MNoPP9TVB1zdvij14k0ef0QpExqqK421v3153j/+hOV3SuxMhBIBUrhRN4cYUI1qBwyDEOgZSg9BGEaR2h3CAJhgZFIJIEIEFJjvICCcQgmzkAe/CYqj7+QzIyDsCynb2hawe6W8xQnZCL6eauKHS10PXc/uftvxSy4D7trAyk3Ccqj104ij7uQ+rd/leTYSa8LafL6IIjRJU9K93P30fHrb+IueJSKlI2yfDzph8ExX2JhCKL0DojsiOjv+M/IERwG5ARh8IFEGCuzNUoGdHqa7kQ1YsZxVB9/LjWHn0SitrFvTFptMtt3yJdlNrYlyiFERLoR/u0gB+ub7BFZjNF0L3qG1vtvJXj8f6TXvEylXSQfCLomzaX27Z+n9vjzwt+USfXdDbs/QaKbrwt51t7yM3r/9iPq25tIJRLkpY+FwQkEjpJ4tkUgDJJg0HhGZBqXjG1NHLsQaCtMJjSBoltk0AccT+a0y6g54nRsJ5IWccR5GJJi4ITeqgkc/b78t1tzzjj3bEjnHOAVBMg1r6L1338iuP9vZFa/gEOB1mQNiRPeTuO7v4xT0xA9p90vxX73JUiZStW7fCGt134J+dQ/SSc02IYg+lqmKEl4EiWhKyUQQuEqvdHh4qg0xCkcYKRECYO2JX5R0Wul0HNOou6M91N16EnIKMEvzITduuS++LZrrRFCIAdZYX3fZ83qNbS2ttLZ2cnatWvZsGEDXV1d+J6HVyxSKBTwfR8dGftCSBzHIZFMkEymcF2XbDZLXX0d48aNp6a2ltraWsaPH0cymdzonMaY0pg2TxgD2vRL0yluWE/Xf6+nePcNsHoxBeGQm3Miky/9EtWzDtst4ya7J0HKVKq2B/9O66+/QO3aV8i4Nr620LYC4yO1xCDLIuAGqTVShL798kcvTPR5nAEoQUtB0Si6FfjTj6LmrZ+m5ujTsWwnGsbWE0PrsK7EsvobsJ7ns3r1apYvf41XX3mVxYsW0dzczPr16+np7sbzfQLfD09lQilhtEEIsGSUykJUYIVBqTCFRUiBkBKjNNK2kY5NtiJLY2MjDQ0N7LHHnsycNZPJkyaxxx57kE6nNxovbEGiDYisF9a9Rus/rqbjgb+QXLsOUzeF1Lu/yLgzLwsl8m6kcu1+BIlurin2svqmX1C45ceMLzYjbIGvQRibkBahDMnbgqJtcLQh7YWVF1rKMMZhZJTnFE4uS1sYIcAJV8euQkDvhNlUnnkpDae8C7uiLhqD6lcjsiUYYzDaIK2+SaG1ZsXKlcx//gUWvPgiCxYsYN3adXR0dqCCACEElpQ4jottWQhZ5gaGMEwSB+jok0jln8e/0caEBVpGExiDUgqlFH4QRNqgoKKigsYxY5k+Yzr7HzCH/fefw7Rp03Acp9+YgUGlXTSIfkTpWfQ0Xbf/kvz9/6BgCqTOeCcT3vk1EpW1u42Xa/ciSHRTveY1rLvmswSP/o0q1+BoH0sHYRq4kFgaQCNEGF8wCGSUKetZII0k7RmkkXiWwLNC0W9rGwuB5wd0ZmowJ1xIw/mfIjN+KhBJjK0gxmAT6qUFC3js0cd45umneeXVV+hs6wClwiIr18WyrL5kQEMpZkGc+i4lWqvwbyFCiUSZEDNRfm/ZUzUirkAxpRR6hOinVmql8Xw/TIHRiprqGvbaa28OOexQDj3sMPadvW8/laxcDdsIA/Ld2p74Dx1/+SH+03djHfwmJlx5Nanx03YLSbL7ECQiR27VEtZ/530kXnkcN2Nj6SKuUQgMCoESVqQq9bcz4sngyTDQlwrCHCbPBi00KSWR2tDlawp7HU31pV+i8siT+849RFUqNnrLSbF61WoefvBBHnzwIV6Y/wI9XV1YtoXtuCRcN1SFyiSB1ppAqVBCDDiuNhopJUaHj01K2W+SChHWqsiSt8n0/Z5QmgyG+BhWRDqtNSoI8H0fN5lk7xnTmTdvHsceeyyzZs0q/U4ptdEY+p5ZXwqK39tFy60/o/nm7+E2jGPSx6+lYs7xuzxJdg+CxOR49QWarno/Vauewko5oDXCKJywwoggSiyURg+6xgsDdiDQUpBzDcoyOIHBMRbGN7S7GeSZ72fc2z6LU1W/VUblQGJoY3jyiSf59x138MQjj9LS0gJCkE6nkNHxPBXgBwFG61Dl8X2klCSSSaqrq3Ei8hjAsR2yFVkcx0EKidKhmtTT04PneeH1EU7Yzo4Oent7Syt8TBjbtpFlts9gruByP1M88QMVkC8U0VpTWVXF3LlzOePMM5g3b17JZtmcRAklb3jetoWPs/6aL8KK52n8yA+oPemyXdrDtesTJCJHx5N30vWTj1Db/BoqmQbtYxsfAInAGEMg44wqMzhBACeAwIKelMBRmmzRpasoWL/ndBrf+y0ajjgzOu/QVzatdYkYhUKBe++5l7//7W88/fQz6MAnk0pjWRa+7+P7Hp7vI4QkkUoyfsJEUukUe+65JzP22QeA8ePHs88++5BKpYiVIClD75Rl2aGBHkkT3/NRKig1K/F9n4ULX+G115ZhSYtly5bx6quv4nkea9esIZfLhUQWAjeRwLbtPlXNREHU6N/9JruQIEAFAYVCAcuymDZ9Oue85S2cdMrJ1NfVle7FoEQpD+Tme1l3/VdpvvN6xrz/Kiae+f5dliS7NkEicrTcdxutP72chqAJ6ViIvIuDQkufOLE2LG3tw6ZucyAFgdC4wsYtSrpyNsFxb6Hm8q+TGbdnX/R4COpUOTE8z+Pfd9zJzX+9mYULXwZjSCaTKKUoFIsYoLq6mslTpjB16lQOP/xwGhsb2Wva3mQzmVIJ7/aA5/v4nsfiRYtZu24djz/+OMtfe40Vy5fT3d1NEATYtk0ymUTSZzsNhCHsxiKlRGtNoVgkUIrJU6ZwzlvewjnnnE1dGVEGM+aN1iUbq+mB23jlV99g0hnvY8+3fbgvP2wXirzvsgSJxXLTfbfQ8+OPMCbXjp9MonVAyngoDCq6kaIkMUoVGBtVxMZEKloSS9rYnqDJTpM4/womXPQppJsYsmelXJ0yxvCff/+Hm2/8Cy+++GLJK1QsFkkkkjSMa2T2fvtx2OGHsd9++zFl8uR+nqHyYw7JpTqUe1emOm3KPggCxfLly1n48ss88cQTLFjwEmtWrcYrFsM4SiKx0bHC+pj4JGDbYSlxwStSKBbZY489ufBtF3LO2WeTzWaBTRClTHXtXjyfV679IlVzj2L62z+3y5Fk1yRINFFb77+N1p98hEZvAy42XuCC1Nh2AW0giFN9Il9ViSBRnpUWGqlDr5WSEiXCIiDfg5b6KdR/4NvUH3dBeJCy2Mpmh1b2wJ999jl+++vf8MQTj6N8v0TKiRMnMnfuXI457jjmHji3tKrGiN2+iD7jeFsIsSX0M9QjYg88X0dnJ/NfmM/9993Hs888w4qVKzBK47outuOEte2qr2FRbEdpoxGWBULgFYt4vs+sWbO49D2XcdJJJ/VT1waeM14Eva4WFlz3JdITZjDj4iso6Yu7AHY9gkTk2PDIv2j74XsZ09uE47oo5YOxCFeeOJUQ4lY3lDJzw7e0CHtNOQqUMPiWQSIp5g09ex5AwxU/o3Lm4UNWqcrjDC3NLfzud7/j73/7G52dHUhpUVFVyZwDDuDUU0/jyCOPKOnk8W/Lf789yTBU9BsT9Kszb2tv58knn+Seu+/hiSeeoHXDBtLJJEnHBSlQgepXBx/fdCHCBnj5Qh5j4LgTTuBDH/4we++9FzC4NCmpXDpgwV9+Dtka9j3rXX2tl3Yydi2CRIZx+9P3sOE776W+dyWuI1GBCtvZDPh6P5FfBiUNQicQOoWRHloWsBxBrifAP+Acxn7yxyTGTx2ySlX+YO/6311cd+11vPTifGzHYfKUKZxwwgmcctqp7Dd7duk3phSf2DUIsSWUcrLoT5YlS5dyx7/+xT133c3qFSuRUpBMhf2A+1TC8sTdvuvt7umhpr6ed737Xbz9kktwHGfTKlf0m1fv/ScylWXaEcfvEiTZdQgSkaPnpUdovupdjGlejnQFgQnFs4EoXyRWpWBTpngYB0lSwMF3A7LGp7tL4594EeM/9hPsqrohkaNcJWnZsIFf/Ozn3H7bbXiez4x9ZnDGmWdy+hmnM66xL4t3s3GB3QQDExgBNrS28p87/83f//Y3li5ZghCCZDLZd48iz1r5pBZS4gcB+Xyeo48+mk9ccQUzZkzfOOofnpToTda8Mh8nmWLM1Gk7Xd3aNQgSkSO3Zhlrv3IuY5e/AIkkAQqr1EitvPw0JsnGbkFhwDISLWQYNZeGXMHHO+69TPz4j7Ez2SG5cMsf9EMPPcwPvv99Frz4IjNmzuS88y/gnHPOora2Nhr+FlIwdmMMvLaurm7+/e9/c8vNN7N40SIsyyKZTCLKnAxAX0woSnnp7u2ltq6Oyy+/nPMvOL907E1Jk56ONtIVlaWE0J2FnU+Q6IZ4nR2s+9oHqHrhFpyMRV5YSD/AEXojj1TZjwFBWCNu+oqcjKBoS2wp6e1SeKe9mwmf+Cm2mx4SOeIHp7Xm17/5DT/96U+pqqjkbRddxIVvu5CxY8aUvre7qFDbioGB0K6ubm655RZuuflmVq9cSUU2Q7xYDTalpGVR9DxUEPCWc8/lk5+6gmw2i1a6X45adDY2pR3saOxcgsTelcBnzY8/gvz3H6hMC4omQBqDI+K2aWxMkqgbYVg2qyPnbihBAhFWweWLPvrUyxn/kR8hE4kheaqUUliWRXtHB1/96lf533//y1lnn8MHP/gB9txjD+CNRYyBGEiU9U1N3HD97/nbrbdSKBTIZDKloONASBFmSnd3d3PgwQfxla99jT322hOtVL8I/66EnUuQaDVfd/13kH/4GpkE+JYFSpE0mvB/RCWvA35rLJTUSAyuL1HCpuhoLAJc26a9WxGccAmTPnU1MpnZKnK8/PJCPve5z+F5Hp++8kredOIJ0XDfuMQYiIFEeeqpp7jm6mt4+qmnSKVS2LYdZiVT5sqOZpq0LXK9vYxrHM8XvvpljjzqyF323u48gkTk2PDobTR/94Pslc8hhUfOUWgBrgozUrWQUefyPi+WMBKDhbIUjgmwizY526XoGtIE5PM+nYefx55fuB4nNTRyxGrVAw88yFe/+lWOO+F4PnXFFVRks4MmII4iRPm9KRaL3PCHP/D766+nu7ubVCoVNsozfdaiIfQ82sIiX8hjuwmu/MyVvPW8tw5uvO9k7ByCRBM2t+JVln7tXOpbVlAfaDxTJO9qpJEkfUBAEM9JE8Y6DGHndIPEVSAJyLuQc2wsY0FXQO9BJzPhy7/HrazfKpvj1ltv449/+hMf+tAHOfmkk/p9NorNo/w+vfDCfL7/g+/z4vz5pFMpLCRmkOxqLQRKKQI/4EMfvpz3vf99uxxJdjxBoqS1wC+y/NuXkn70VqqSNrYfULQUBQcsJUj5AiPCDucbDRqDEpDyHKSBrnSAdCRBTtA57mCmXHUTTuOkrfJW/elPf+bpZ57m05/+NBPGj99lRf6ujHJp0tXdzTXXXMNfb/wLdpRoqZTql9ZvolR4S0pyuRwXv/3tfOpTV5RSeHaFe7/DCRJHTtf9+ScUfv8FGq0ASysCYShIUFJga3CDUGIMRhDQ+JbACeywfY+jsTxDU2oCdVfdQtWsQ7Yirwpu/Mtf6Ozs4H3vfR+2bZVskVEMD+XS5I477uQnP/whHe3tJJNJgiCs9BRlyaXxQtTT08MFF17I5z7/udL939kk2bEEiVb0jhcfo+2LF1Dnr8fFII3Cl4JAhK2YhZZYJtzLIi4RH5DFg4pXGUBi0+FXkP3ET6l78yX96g82B6UU//7Pf7Edm1NPPjka4qhKNRIolyavvPIKX/7il1j0yitUVFT0JWZGzxD6iNDd3c3FF1/M577w+VLS4s4kyY6bCVG8w+/ppOn6L5MsrEZaksBo8pbEFwKpwQ0ktt78sISRWCpsDO0IyQZfoi+6IiKH3iI54gf04oIF7LX3Xpx68smjhvgII+7UopRin3324f/9/Occc9xx9PT0lFLmS+XE9AUks9ksN910Ez//2c/DZhODFHXtSOxwgrTe8nMy8x8gmXZR2qAtGaWtl/Z4JZQQhkCGbUAlBsuEckQYiTTgaEhgkS9qzCGnMPmiT/QrXd0chBB4nseUyZOZOWPGRmkVoxg5WJaF1ppx4xr50U9+zAUXXURXT09fD7JBSobT6TS/++1vueH3N5TskZ2FHUOQSJx2vfI0+b/9lBrLQBDV/Zlwk0vLhE0VAhltSIkpbTkW7vAnoizdcD8+SwoKHqxvnM34y/8PK5kmSikd0pCSySQ11dW7jDH4ekacleA4Dl/44hd456WX0pvLlcgR569BXxQ+4bpc/bOf8c9//KP0+50y9u1+hkhyKL/Iuhu/j5tvx1g2ttZR6x3K5IbGCF3afyMmjjLgSUEgoWgbirahIAXrkxka3vM10hP2jlrgbN3ljJJjx0GWqUuf+tQVfOgjHyaXz6O0xrbtUqMIALTGEhKB4LtXfYfHHntsp5Fk+xvpkfRo+e/v6P1/l1MpBJYOcEwQ7skHg9T/heqUQ0gOX4Ypi4IApMEWko6Cwjvtg+z9yavDDn9bsh1KuuzOz83cHthdtm0uN8qvve6X/PLaa0k4DiKyV6SUpeCilIJCsUjj+PFcfe01TJ48Ga0NUu6469y+BIkOXexsZeVnTmHc8mcxTjIUt3ioaPfXModf+DPCbZFtAT4CX7jYWpBURRASzxjWjJvO1O/9m2TjlC1Gykv7fr/OUV7vvSuj3CFy9S+u5pfXXdev51ZY1RBm10lb0t3Ty6GHH8ZPfvKTUheVHSX5t2sucbzXxPq//xJ7xUs4Trg/R2DAYCOIA0cDUtYj+0MTppoII3FNgG2gaCzaRJa6i74ckmNLwUATjkF5BTpeeYHcuiVIilFb6r5a6407WcfrxqbWj0Ee0JAeWvnx4uSLwX4XeXf6jSc0yoQyGA3atlG2TaKygbqZK6+8EhqNwAFz5lAV5QENXHW7urr40ue/yCMPPUgynQ6NUyn52S9+zkEHHbRJ8V3K5A0CHnvsMZ5//nnWrl1LKplir7324sCDDmTWzJkE0edaG/zAZ+qUqey9916l3y9ZspQVK1aQcF3AEASKvfbeq5/nzBjDc88/T1dnF7aUqCiOsd/++23yusrR2taG7/lIGR5LRZMsm930xjelJMSVq1i6dAmO42C0wfd99tp7L6ZMmdLvvPHfhWKRp59+mmVLlrJy5Up6enqorKxk6tSp7Lf/fsyePTuUFkZv5IwYeG6A9U1NrFu7ju7ubq69+mqef+ZZ3v2ey/jM5z67XVSrGCNOkLjZcb5pFes+eRKNrYsIbBcls2SKBTpSSbSlyQa9oG0CKzy9NAIlQEmF1JqEp7F9Q85xENIml/PR7/8OEy+6AnToydncTdncTYtv/N333MvDDz2I1ppFixbz2uLFYaKilPT29nLYEUdwzTVXb7Gbx5Ym5hutGnKoE3Yo3xv4nWWvvcYlb7uIMfX1/Op3vx2xrN1NYcSM9BKEBKNJjZ1E8rjz6Lj527i2AT9PURSxAoXQhkB72MrHDgSlYIUAC40lwNIGJSwC6SCNoUpo1v7venpPeCuZMZORkY98MH6Xi3xd5lItpS1EN/Txxx7j+uuvp7q6GoBUnBUcFRadfc7ZWJa1xQe5qWBljHLDHvoCZeUPNU5WLE+piYubyjFYhupQ7ZBNjW+ovy0f32DXECO+9+XnG5gwXx7P2BxKx4r2eL/uuuvY0NbKl7/6VcaMGbNdpQeMtA0SIb4vlae+g/Yxk0ApXKPCIJHxSCoPW8vQXyTCxg5agpFhBqJG4FmgHY1rfCx83ARkV7xI879+G8VdBkRdB5R1Qvi5Ncj7MdKZNLW1tVRWVpJMJjEizPFqa2/nhBNP5E0nnjjk1WlTYxmoW8syr9HA31uW1fc7a9OTb1PXO5QxDvYa6m/LxzfYNWzufohN3JOhwJiwyvGFF17gjjvu4Kyzz+bUU0/Z7uSA7UQQISXGaLKTZ5A68d30+Apb+EgTJi/60qCkQQiDjNkk+lb6eE9wWxsEAVoIAiPIug5d//sD7QufDLuPb2O+f643x4YNG+jo6KC7u5tCIUy5OP/8C/jSl75U6trxRlKPdkXEEvq6665j7JixfPrTn96qhWFbMPIqVoR46GPPeC+rHvgTwfpluMJCGNDCwaCwhGawmLIhZK7p0zbQ2uAKSX3balr//E2qvvzXaLdas9min0HHFn3/yKOOwrIt0qk06XSahoYGpk+fzqxZM8PzvsFsh10RsZS45957eejBh/i/H/4f4xobd4j0gO1hpJcjMthX/fHrBDd8kzHSwWifoivRQpPUGmHExqkThASRRuMLSSAtXKVJBgZjWawHEp/6LWNPensoRUb8RpmId6Pk2JmIp2ZPTy8XXngBRx19NF/8whd2GDlgO6lYfQizBMec+WF6ph1KTgfYUiANCBMZrpsIiWkjUEi0NECAERBIgTCKahOw4cbv07t6UbRz6/BUrbjtTfzqS6Xetp1RRzEyiCX41ddcTSZbwRWf/OQOl+rblyCR7pioqqfu7A+TEw42YGmNNCIix6Ynd9hxUUaVgxolJAVhI2yHqpULaPrDVVGpK2xtxl7shbEsq/QajgE5iu2DWEo89/zzPPbY4/zohz8kFbWjff0QhOhijKHxhAvQh55FrhjgCIGtAS0HtUGAuHEp0oCMOKCkRkuNMlDtCMT9t9L0v79AVJ89VISZpNu/Ed0ohodYSvT09PCzn/2cj370I0yaNHFE6zyGih1g5YQEkbZD/Ts/R0vdeIzWWEajo4bXm/6tLjXBDnerMkgU0gRgBFVBjo4bvkXP0vnhvoFbIElMiPaODpavXFnK+xnFroWYIDf84Q+ceOIJnHjCCaVanx2NHWTphC7ZimkH4Jz9EToKEiMN2tqUBdLn6u3/7zBJWyAwxiZIJalsXUz7NVcQ9HSUyLgpxFKjob6edevX89wLL/SrgBvFtmNb72WsWj3w0EPU1tVxycUX9+vFu6Ox4ygZTd7x536U3MGnUfAVSSTWUNUcI0osMUISSInUkLEh9fQ9rL/hB2UE2TxJAA4/5BBWr17N3ffcM2jkdxRDQ/k9W7N2LZ43vPr4+FhSStauW0dbezsXnHfedsvSHSp2KEGMMdiZLNXv/hydFeOwC+G2B0P7fdTrBwCNEBqHAKENVW6K4B8/Y/3/fjekAGJMkjNPP52mpiau//0NpajyqDQZOmKbQCnFPffdi+/7YUbCMBcaIQRFz6OppZk3n3LKLuEw2aEjEJExXT/7SJLnX0mTtpG2vdW11dIYLONhRIAwEl8Iqkwv3b/8PJ3P3w/SAq22eBxjDJdcfDEqCPja179BT09Yxz6wqdsoNkZsE3R1d/G766+nuqqaqQMye4cD3/OYPXMWiURilwjU7nCKhl4tTeNbL8c79kx68nmsaKUYWCZU+pfp/35cMiqVBCw8K8C2XWo7u2j+2afoXbN4iyQpT7p7z3suY8KE8Xz4ox9l8ZIlpfqCUZVrY8T3xbIsXnzpJb73vR9wwAEHcNCBB46IlymbzeI44TZvO5scsL0j6ZtCnBK/5lVWfenN1KxdRkbYCBRKGoyJKwHjlj2iTL3qg9Th95SlEFpiZIpCUKQw+wTGf+kG3JqGIUXaY8Pwtttv51e/+jWXXvpuLjj//NJnW5PU93qFIexIGRvLf/zTn7j//vv5+Mc+zn77zd6h0e0diZ1DEPoKq5qfvIO2b7+bqb2daCcAJMaEqShamFDEmY2ESP9jEbeoshCWINfrkTviXCZ+4Tc42eoSITeHkvfkwQf5+te+zpw5+3PlZz7D+HHj+n3+RkT5ta9f38T3vvc9Wtta+da3vlXaLuL1em922lWF9ohizKGnk33Hl1kjFUXbwTNpFG7kzo36P21h8S7Ve6BAK9xMmsRT/2D1Tz9MkOsp1ahsDrHtcewxx/Cb3/6GVatX87YLL+Smv/611DMqrol4oyDeci3uL/bXm2/m4ksuxk24/PK661735ICdKEFCGNAGLWDJzy8n+bdfU+NmKciApPKxCAjkppvclBfhlP42oeqlXUlHwSM44T1M+eRPsZLprZIk+Xye73//+9x4440cceSRfPjDH+bggw4qfQdGpnv4roiB1/f0M89w7bXX8txzz/GhD32I977nPaXvbe97sLMN9Z1MEEqBvSDfTfPX307m8X9iqlOIgsYWCiUVm2rKNLBKLT6ejgumbEFHUcAJlzHh4z/CTma2yiYB+Oc//8l3v/c9enp6OPuss3n7O97O9GjDmdhgfb0QZaC9tXTZMm644QZuv+02Jk+Zwpe//GUOi3aZhe1oREclDB3trWSyFaW9CXcGdj5BoDRpveZVrPviWVS99jwqnUUEBRwUGBmpWbH/qk83HDh4DXiWjWUMrgkwUtLhGdRxb2fix/4fTqYq9G7JLdeZQzgJVqxcyU9+8hP+9c9/0tDQwFlnncV5553H3nvvXXYJu6cxXyJ5WRufxYuXcPvtt/P3v/+Njo523v6Od/LBD3yQmprq7S41jNEIIVm3ejnSshg7bhLDbpQ3Atg1CAIlkvQue5G1XzmfqubFJBMSAh1X2PZDqfpw4PsGlLBQUmChwy3fpENH0VA4+q1M+cTPcKvqhkSScFi6ZH/885//4trrrmXhyy8zefJkTjjxRM466ywOmDOnRIzy3V13VbKUu7DLJ/tLCxZw2223cfddd7FmzRoOOuhgPvKRj3DMMfOA7axSmahZnxCsfuV5AgNTZx4wqmL1QzRpOxc8zoavX0pt+xJsVxAYiTQKIXRpsxozCGli2Bp8GRZaOSrAMoJAJuj1cxTnnMrYj/6Q9JSZW00SgJYNG/jDH/7IzTf/leamJurr6znkkEM4+ZRTOPqoo6itre33O9g1yLIpUnR2dvLE409wx5138tRTT7J+/XqmTJnCxRdfwkUXX0Q22iyV7XkNZbbhogf/ThDAzOPPigTazr1vuxZBoDRpO557nA3fvITq3tVYtovUBYzUGAGWBmnCBgsbw0S2iQQE0hgMOmqkLckVA7omzqb2Yz+n9sBjQ8lVpl5sdmhlRFmw4GVu/MuN3H3XXbRu2EA6lWaPPffk8MMP59jjjuWAAw4o1S/0XZrq60a4HSdcvyBn1PCgHPl8gfkvvMAjDz/C448+yqJFr9Lb28vYCeN58+lncNFFF7HH1CkbXfN2GWvk7kcrXrrxhwTpSuac/f5od9qdL4F3PYJAiSTtj9/Jhu9fxrjuFqQryAPC2EgCZNTdfWP0+bXiDalLgZSICIEn2VA9jsoPfZfGE94W/WzLHi7Y2DCf/+KL3HLzLdx/3320NDejtaa6upqpe+zB/nP25+CDDubgQw4edIu0TbmMy7uyDHb+wf4u/RZKHdLL0drayosvvsTTTz/F008+xcrly+ns6EAbGDd+HCeedBJveeu5zJo5szS27S354m3Eg64NvHDNF0iOm86+7/w0/X2TOxe7JkGgjySP3UHnD95Pdc9apJ3AaAtLeGjUkFb9EqJovDYW2rExqki3qMY990rGXvIJrERyyCoXbDyBFi1axH/+/R/uuecelr/2Gp5XBAPZigoaxoxh72nT2GvPPZl74FwmT57MmDFjNr//3zYgn8/T3NzMihUree7ZZ1m27DVefWUhbW1tpd2YkokEe0+fzrHHHsdpbz615HCIS47lNu4vvlmUOtkI8ouf4eVrriRzwHHs886v9PtsV8CuSxAoTdi2p++h6zsfoLJzKTLtYOcNQmgCe4hrTBxpFBpf2mhjkTAKR2u6PQfvyHOo+cDXyUyaHgUUh6ZywcZE2dDaysMPPcx9997L/Bfm09HRXtp9SQgRbkftukyZOpXx48eTyWbYd999GTduPLZtU1lZSV1dHZWVlbiuE52lz6Ed19F3dXfT0tJCT3c3QaBoamrixRdfpKe7mzVr1rByxUqKxUJpL3EhBI7j0NDQwAFz53Lc8cdzxBFHUFNTXTou7IDYTpmbfcO9N/LSDd9hwqmXMO1tn93lyAG7OkGgRJKulx5n7fffzZh1r2LbKQw+Uuit2HwsrH9XwsaQQCiQ0sNxNG2+oaPxIBrf+RXqjzsjOq+OOsIPnSjQf4ItW/YaTz/1NI8//hgvL1hAW1sbuVyu9B0TFQJZUiKjRmypVIrq6hoqKrK4biLSCmW5sojneXR1dtLR2Ukhnw+zj40hiJpPxN4gCPeLr29oYNasfTnq6KM46KCDmDx50mbHvV1gwkbhSEnQ28G6332FpgdupuGyq5hy2qXhAgK7FDlgdyAIfbpqz8pXWHPV+8gsepTKdNicbpAcxv6/pf8UF9pCC4ERBssYfBs8KbByFp1ODfabL6bxbZ8kWT8hPvmQbJPS+TYRPGxubmbBgpd59ZVXmD9/PmvXrqWlpYVCLoeJdrIiHmtU+FVyccY2CYTfG2CHxNm1tuOQymSob2igsbGRmbNmsd/s2czebz/q6+s2+s0O866VSY3OFx9gxW++jvfaMvb4+HepO+FtW70Y7UjsFgQBSpIk37KGpp98jNRjt5HMOmgtsAKNkBolwGBhKYMVrbgi8nYpGaa0GAOWARuDFhJjEhilsWxFgKZTGbqnHcGYiz5Pw5GnheTYCk9XvyFvZnXu7OxkxYqVrF+/nhWvLWflqpV0d3XR29NLR0c7vb05giDcxyNQKjw9AtuxSSSTpFMpqqqqyVZkqaqqZtLkSeyxxx6MGTuWSZMmUV1dNeh4dqjLuUxd9Ts30Pb3X9B+8/9haiYw/lO/pGrOMZEXa9ckB+xOBIHSShQU8qz95ecI/nUtNbaLjYcmQBgLgwVGYxuNpcFCoITGszWBNBgkrgrdxEqG/bmEERip0EIgAS/QtLvViHnnMvaiz5CdND06vwoJM4wJtqk4xMaXqOnp6aU310uxUMSLtkgzgCUliUSCZDJJOp0im81u8ViwE+IwJmpDEyU5tj32H/J//C7eSw/AoScw/uPXkJw4faucIjsLuxdBoEQSYzTrb76awh++SZXfgnBtpA+2NviWRllhIqSFwDKEG2cagRKiLDLf5040xGQBB00gJU2+oHfiLOpOezcNp70Dt6KubAzbturFhBmo6mztRB6ssGunBSaNCckRTfreFYtou/mn+A/eRJDvIHn6+xn3nm/hVNTuFuSA3ZEg0M/b0fb0PbRe/WnSq58nnbJJFQwKTcEBJQUCjWXAUQI3kCgBgVUWQykrxrK0HR02AAxGWngB9Aag9zmczFkfoPr487DccJsEE1fQjeBkNGVN8IayXcHOjtAD/QxwgHzTctr/fT3ef/9Idu1S2sdW4V70VSad8/Fws5zt0i52+2D3JAgQp8ojJYX1K1n7q88iHrqJMdJCGoHRAcoSKBuM0FhKYCsLLUCXZQiXG/Fh/y3QlkJHz89WNrYBXdR0SRd/zslk3/Ihqo48CRmtgEYrxDBVr90acaAzmuyFtrV03f1H/P/8HrnyZYyBYObhVFz2dWoOPDn87jCaje9M7MYEiRCJaq0C1t76M/J/+R61HRtI2Umk8DEiIBCGsE1waLoLoelreRo7T/tiDaGUCdNVpJZYWmBJG4yPLvgUnCxq7rE4J72b2qPPwI4kCkb3Nb3ejSbBVsEY4i3wYhSaVtJy1x8oPPwXUq+9REpBa7oG+9TLmHjJ53Cr6ndpT9XmsPsTBPq5YjvnP0Lzb76KtfBhKixBRmik9lFAIEODXAiNwSBNSAojwiiDpWXo8UJgZLyfuEYgohoTgWODozT5XECHU0uw73Fkjzmd2nlvJlnbWDakMAs5+r8dfUdGFrEKFeaxlN7uXvQMbfffin7sX1hrX8YVCoygZ/z+VLz9y4w58a3hle8m9sZgeH0QBPrpwX5vJ2tu+ynd//otDa0rqXEEvhAULXCUCbd3kxaBCJs+2EZjaxV6syIHscCA0BihMRKUECGhAoMRDlqKcEOgQNElXXKTZpA8+FQqj3kLldPnYttO39i0iiTXbiRZYkmB6GcveB0tdD//IJ0P/w3ruXtJbViLk5EoY5GzapDHnU/92z9FsnGPXTIyvrV4/RAkRpkB2PXqs7T84Vuop++khiIpJ4H2Qm+WsQRKOhijcIzGVkFEiFByaKEh3CgQJcJaBcuEbmBlwtbaUmgsQmdAUSn8APKZBvQ+R+Iefhq1B55AZtLeYTFS2fgMcY3DLkSYaIEJx9bfnvLz3eQWPkXbE/+l+Nx9JFe9SsbrJZ2QaGNoNYLc9MNpvPiL1B5+Svij3cgQ3xxefwSBftJEBT7r7ruF3F9+RvWrT+NkHEzSxvFypa0YAhHvPRKlx4sw6Bj36dIAgpJKFtejhKn0ofolkLhohK/I+5JumUHXjUPvNYfUQW8iNftQMnvPwh5YPqojIiJCh9p2J43pK96PH/0A9ccAXlcrvQufovDc/RRfeIjEyheRXg7hOCSEg6UMbSqgc9Ke1Jz+fsae/A7cilpKrV+3IvtgV8brkyARSrUGQLG1mfZ//Iqeu67BbVlDNmFjI5ABKGEIbIPURPsiEhGkv/m+qWkrTGi/IHT4khJpJEEQEASSnHYo1DXiTZlGctYhZKYfRHbvOdi1jTjJzGADL03iARGOIRURmRIJwn+VElUG2BDlKHa34q16ldziF8m98gzFpS/grnyVmlwPjtB4FUmkVKSKimJR0V5Rgzj5vdS99YNkxu8ZHuR1IjXK8bomSAgTESVcJXPL57Phzt+Rf+gfVDYtp1IKSFgUBSijcHRcagVExrsoHWlwSCOwNHi2omiBtsJJYmlwjcAibBekfMj5IJwkunIMcuwU3L3nYMbtiTvjQMTYqSRrx+LG21Fvj7thDMWOFvzOVtTaJeRffQqxdhG5lQuwm9fgdrSTANzovvhSomwHpXxM3qOYaMSa92aqzrqM7KyjwoNuQ4bBro43AEEiDAhm9S5bQOe/fof/8C0kN6wg7QK2i9JhKr3QJsx/Mn35XJvqzxXmfGl8CwIhEUZiaXC0QWgHpIVAYURYCqkweEYjimB8TeAkKGQqyVfU4DZOwm2ciM7U4o7ZA7dhAiZbibYd7GQSN5XBTlVhZaoj6RgVhmmFVgpdLOB1d+Dne9DFHNLPo9ub6F27DL99PRWdTXirl+F1teP0tuEUcrga7IQgcBLYAhI6IKHAE9AtND2+RlZVYh90FtkzPkzlfodHjfpeX+rUYHjjECRG3EAueqj51Ytp+8/vKT5wE6mmpbja4LgyMsJBqiiqLTZV4hsnqoSpKhiBNBJLG2xjyEuXXsfBMhpb+yBV6VhSSBIi7AMslI/UisA36AACwLMkKuHiS5tASnBt7FQGK5GBZAVGCiQCozXGaIzWaK8IuW5UPodQRVzjYwcB0ldIAQkBwgJtC4wRYFkEQoKwUFqQMgbXL2A8Tadw6B0zlcQRp1F92jvITj84uof9F5vXM954BIkxkCgta+h98BYK9/8Jf/mrpHq7yVoS2wJlCYJoQ1JMuL97bApoEyY+SmOVjPdAaJSMsogFoQEfEUYaHe4Nb0Lvl2/FIYawEbcxNiBDKWaCcBs6rLAPtyac1Ci09Pu2y44W8lg1NBYIKbBE6HgIc5dDz5sREqRCo6NUllCJtJEI38cLNPlUmmDqHJyj30LVseeRGr9HdM/eOMSI8cYlSIwBRFFenvYXHyf/wL/gmXuQLQux8XAtFxsXhIdlAoQA3xiUlEgtcAzEsiQkRry9tUZG0zP8hoiIJNBERj2R9EFGEzrylomwEMoIAUZGxxcgDUaoKOgpS2qgMaG9pIVBE2UPlHLONPEmdo6MA6IBJghQHgQIVMMU7INPJnXMeWTnHIWVSPfdoyg7942GUYLEGGR1LGxYQ+dz95F/4n70iw9ida7AUT4JKUlIkMJGKYmxJFoSRee9qKFEGKkPDyujIq24NiXMKraisl8RnT7sISyjzON4r3gi47esetJEqhVghEILHWYDREQS2kJghUQRBmWpiF8SGUjsooZAUTQW+YbxyH0PJjn3GDKHnEZ6fF8zvLAOhte1jbEljBJkIAap5APoXb2UnlefoOulJ8kvfIrEusVkejeQMgbbdtF2krBcK4hWdAuBRAsfRRGEwYq8XWH6RZTIYokoNCExMlrxS0Ve4cSUEWG0MOGW2FoiTZipHG6EKjDCxogwG9kyRWyhwqCnCWvYtQJfgZ9MU6xtJDX9MNJz30RiztEkJ0/vcxyX0kp2oSDmTsQoQTaHON1igAuz2NlGbtl8ci8/TG7hIyRWLiK7biWyGITGtyURlg1WAikEUgRIE0bQERBojRYKCws7qkExIpQRgsiOkQpfhBM19JIRRblDe8UYiSQknCSUGkYJtNFgelEG8hJ6ExlM3TjkmClUTz8IZ/Y83OkHkKif2D+aoqMuMW9gaTEYRgkyVBgdSZb+ZFFaEWxYQ7BqCd7apbQveR7RtAhWvoiV6yGRLyCLqqSpWFZoQ0gZSg0d7dEoDCBFpFIBaKTyS+fRfcnGgMTXgkArIs6hLTBuAp2uxJs4G1U/mczUmaT3ORh3wt44Y8ZjW2X5YTBKiiFglCDDQayGwaCGq1Y+xaaVmN4OimsW0bNiIaa3Dau7HW/1a1jdnVhBEYEiUD5aB4jAQyqFZQxSGyyjQ8kgJFpaKMvC2AmMDGta7EQC2TABf9xeeBVjyUzdh9TEvZGZahJjp/QZ2P0GFueXjZJiqBglyDbD9OntsMXJFxTyKK8AKgCjMIGHUT74RYxXwCiFKJWu2gjbBdtGOAmEnQDLCo1t28JOV4afDzqs8uTDXSwxcjfCKEG2C2LSRH8DpQk60pO0nAhxvtUoGUYMowTZ0djodptB/+wHscl/jBJhO2OUIKMYxWYwaqmNYhSbwShBRjGKzWCUIKMYxWYwSpBRjGIzGCXIKEaxGYwSZBSj2AxGCTKKUWwGowQZxSg2g1GCjGIUm8EoQUYxis3g/wPsddmclWkduwAAAABJRU5ErkJggg==" alt="Logo Buyun Flet" id="logo">
+        <nav>
+            <ul>
+                <li><a href="#" id="link-request">Solicitar Envío</a></li>
+                <li><a href="#" id="link-tracking">Ver Mis Envíos</a></li>
+                <li><a href="#" id="link-admin">Panel</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <!-- Sección de solicitud de envío -->
+        <section id="section-request" class="active">
+            <h2>Solicitar Envío</h2>
+            <form id="request-form">
+                <input type="text" id="name" placeholder="Nombre completo" required>
+                <input type="email" id="email" placeholder="Correo electrónico" required>
+                <input type="text" id="phone" placeholder="Teléfono de contacto" required>
+                <input type="text" id="pickup" placeholder="Dirección de retiro" required>
+                <input type="text" id="delivery" placeholder="Dirección de entrega" required>
+                <label for="service">Tipo de servicio</label>
+                <select id="service" required>
+                    <option value="Mudanza">Mudanza</option>
+                    <option value="Expreso">Expreso</option>
+                    <option value="Emprendedor">Emprendedor</option>
+                    <option value="Mercado Flex">Mercado Flex</option>
+                    <option value="Flete">Flete</option>
+                    <option value="Flete Express">Flete Express</option>
+                    <option value="Mudanza Interprovincial">Mudanza Interprovincial</option>
+                    <option value="Movimiento de Stock">Movimiento de Stock</option>
+                    <option value="Repartos">Repartos</option>
+                </select>
+                <textarea id="description" placeholder="Descripción del envío (opcional)" rows="4"></textarea>
+                <button type="submit">Enviar solicitud</button>
+            </form>
+        </section>
+
+        <!-- Sección de seguimiento -->
+        <section id="section-tracking">
+            <h2>Ver Mis Envíos</h2>
+            <form id="track-form">
+                <input type="text" id="track-id" placeholder="Ingrese su código de envío" required>
+                <button type="submit">Ver estado</button>
+            </form>
+            <div id="track-result"></div>
+        </section>
+
+        <!-- Sección de panel de administración -->
+        <section id="section-admin">
+            <h2>Panel de Administración</h2>
+            <div id="admin-login" class="active">
+                <form id="admin-login-form">
+                    <input type="text" id="admin-username" placeholder="Usuario" required>
+                    <input type="password" id="admin-password" placeholder="Contraseña" required>
+                    <button type="submit">Entrar</button>
+                </form>
+            </div>
+            <div id="admin-panel" style="display:none;">
+                <button id="admin-logout">Cerrar sesión</button>
+                <table id="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Servicio</th>
+                            <th>Estado</th>
+                            <th>Cambiar estado</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <!-- Formulario para agregar nuevos usuarios administradores -->
+                <h3>Agregar usuario administrador</h3>
+                <form id="add-admin-form">
+                    <input type="text" id="new-admin-username" placeholder="Nuevo usuario" required>
+                    <input type="password" id="new-admin-password" placeholder="Contraseña" required>
+                    <button type="submit">Agregar</button>
+                </form>
+                <div id="add-admin-msg" style="margin-top: 10px; color: var(--primary-color);"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Funciones de almacenamiento
+        function getOrders() {
+            return JSON.parse(localStorage.getItem('orders') || '[]');
+        }
+
+        function saveOrders(orders) {
+            localStorage.setItem('orders', JSON.stringify(orders));
+        }
+
+        function generateId() {
+            const now = new Date();
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            return `BFT-${now.getTime()}-${code}`;
+        }
+
+        // Función para enviar correo electrónico mediante un enlace mailto.
+        // Esta función abrirá el cliente de correo predeterminado del usuario con los campos
+        // de destinatario, asunto y cuerpo pre-completados. No requiere servidor ni API.
+        function sendEmail(to, subject, body) {
+            const mailtoLink = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            /*
+             * Abrimos el enlace mailto en una nueva pestaña para no abandonar la aplicación.
+             * Dependiendo del navegador o de las políticas de seguridad, esta acción puede
+             * estar bloqueada. Sin embargo, no interrumpe el flujo principal de la página.
+             */
+            window.open(mailtoLink);
+        }
+
+        // Funciones de administración (usuarios)
+        function getAdminUsers() {
+            /*
+             * Obtiene la lista de administradores desde localStorage. Si no existe
+             * se inicializa con usuarios por defecto. Además, siempre garantiza
+             * que el usuario superadmin "Luciano" (con contraseña 26191415) esté presente,
+             * añadiéndolo a la lista si no existe. Este método también actualiza
+             * localStorage en el caso de que el superadmin no estuviera registrado.
+             */
+            const stored = localStorage.getItem('admin_users');
+            const defaultUsers = [
+                { username: 'admin', password: 'clave123' },
+                { username: 'Luciano', password: '26191415' }
+            ];
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    // Añadir superadmin por defecto si no existe
+                    const exists = parsed.some(u => u.username === 'Luciano');
+                    if (!exists) {
+                        parsed.push({ username: 'Luciano', password: '26191415' });
+                        // Guardamos la lista actualizada con el superadmin incluido
+                        localStorage.setItem('admin_users', JSON.stringify(parsed));
+                    }
+                    return parsed;
+                } catch (e) {
+                    // Si hay un error de parseo, retornamos los usuarios por defecto
+                    localStorage.setItem('admin_users', JSON.stringify(defaultUsers));
+                    return defaultUsers;
+                }
+            }
+            // Si no hay usuarios almacenados, se guardan y devuelven los predeterminados
+            localStorage.setItem('admin_users', JSON.stringify(defaultUsers));
+            return defaultUsers;
+        }
+
+        function saveAdminUsers(users) {
+            localStorage.setItem('admin_users', JSON.stringify(users));
+        }
+
+        function addAdminUser(username, password) {
+            const users = getAdminUsers();
+            // No permitir usuarios duplicados
+            if (users.some(u => u.username === username)) {
+                return false;
+            }
+            users.push({ username, password });
+            saveAdminUsers(users);
+            return true;
+        }
+
+        // Funciones de navegación
+        function showSection(sectionId) {
+            document.querySelectorAll('main section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        function showAdminView() {
+            showSection('section-admin');
+            if (localStorage.getItem('admin_logged_in') === 'true') {
+                showAdminPanel();
+            } else {
+                showAdminLogin();
+            }
+        }
+
+        function showAdminLogin() {
+            document.getElementById('admin-login').style.display = 'block';
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+
+        function showAdminPanel() {
+            document.getElementById('admin-login').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            renderAdminTable();
+        }
+
+        // Renderiza la tabla de pedidos en el panel
+        function renderAdminTable() {
+            const orders = getOrders();
+            const tbody = document.querySelector('#admin-table tbody');
+            tbody.innerHTML = '';
+            orders.forEach((order, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${order.id}</td>
+                    <td>${order.name}</td>
+                    <td>${order.service}</td>
+                    <td>${order.status}</td>
+                    <td>
+                        <select class="status-select" data-index="${index}">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En Retiro">En Retiro</option>
+                            <option value="En Camino">En Camino</option>
+                            <option value="Entregado">Entregado</option>
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            // Asigna el valor actual y manejador a cada select
+            document.querySelectorAll('.status-select').forEach(select => {
+                const idx = select.getAttribute('data-index');
+                select.value = orders[idx].status;
+                select.addEventListener('change', function() {
+                    orders[idx].status = this.value;
+                    saveOrders(orders);
+                    // Enviar notificación de cambio de estado al cliente
+                    const updatedOrder = orders[idx];
+                    sendEmail(
+                        updatedOrder.email,
+                        `Actualización de envío Buyun Flet: ${updatedOrder.id}`,
+                        `Hola ${updatedOrder.name},\n\n` +
+                        `Te informamos que el estado de tu envío con código ${updatedOrder.id} ha cambiado a: ${updatedOrder.status}.\n` +
+                        `Servicio: ${updatedOrder.service}\n\n` +
+                        `¡Gracias por confiar en nosotros!`
+                    );
+                    renderAdminTable();
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navegación de links
+            // Aseguramos que el logo apunte al archivo local para evitar que el código base64 no cargue
+            const logoImg = document.getElementById('logo');
+            if (logoImg) {
+                // Set the logo source to the local file and make it visible once loaded.
+                logoImg.src = 'logo.png';
+                logoImg.style.visibility = 'visible';
+            }
+            document.getElementById('link-request').addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection('section-request');
+            });
+            document.getElementById('link-tracking').addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection('section-tracking');
+            });
+            document.getElementById('link-admin').addEventListener('click', (e) => {
+                e.preventDefault();
+                showAdminView();
+            });
+
+            // Manejo de envío de formularios
+            document.getElementById('request-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = generateId();
+                const orders = getOrders();
+                const order = {
+                    id: id,
+                    name: document.getElementById('name').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    pickup: document.getElementById('pickup').value.trim(),
+                    delivery: document.getElementById('delivery').value.trim(),
+                    service: document.getElementById('service').value,
+                    description: document.getElementById('description').value.trim(),
+                    status: 'Pendiente',
+                    created_at: new Date().toISOString()
+                };
+                orders.push(order);
+                saveOrders(orders);
+                alert(`¡Solicitud enviada!\nSu código de envío es: ${id}`);
+                // Enviar correo de confirmación al cliente con su código de envío
+                sendEmail(
+                    order.email,
+                    `Confirmación de pedido Buyun Flet: ${order.id}`,
+                    `Hola ${order.name},\n\n` +
+                    `Gracias por confiar en Buyun Flet. Tu solicitud se ha registrado correctamente.\n` +
+                    `Código de envío: ${order.id}\n` +
+                    `Servicio: ${order.service}\n` +
+                    `Estado actual: ${order.status}\n\n` +
+                    `¡Te avisaremos cuando el estado de tu envío cambie!`
+                );
+                document.getElementById('request-form').reset();
+            });
+
+            document.getElementById('track-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('track-id').value.trim();
+                const orders = getOrders();
+                const resultDiv = document.getElementById('track-result');
+                const order = orders.find(o => o.id === id);
+                if (!order) {
+                    resultDiv.innerHTML = '<p>No se encontró ningún envío con ese código.</p>';
+                } else {
+                    resultDiv.innerHTML = `
+                        <p><strong>ID:</strong> ${order.id}</p>
+                        <p><strong>Cliente:</strong> ${order.name}</p>
+                        <p><strong>Servicio:</strong> ${order.service}</p>
+                        <p><strong>Estado:</strong> ${order.status}</p>
+                        <p><strong>Fecha de creación:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                    `;
+                }
+            });
+
+            document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const user = document.getElementById('admin-username').value.trim();
+                const pass = document.getElementById('admin-password').value;
+                // Validar las credenciales comparando con los usuarios almacenados en localStorage
+                const validUsers = getAdminUsers();
+                const found = validUsers.find(u => u.username === user && u.password === pass);
+                if (found) {
+                    localStorage.setItem('admin_logged_in', 'true');
+                    showAdminPanel();
+                } else {
+                    alert('Usuario o contraseña incorrectos.');
+                }
+            });
+
+            document.getElementById('admin-logout').addEventListener('click', () => {
+                localStorage.removeItem('admin_logged_in');
+                showAdminLogin();
+            });
+            // Manejo de creación de nuevos administradores
+            document.getElementById('add-admin-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newUser = document.getElementById('new-admin-username').value.trim();
+                const newPass = document.getElementById('new-admin-password').value;
+                const msgDiv = document.getElementById('add-admin-msg');
+                if (addAdminUser(newUser, newPass)) {
+                    msgDiv.style.color = 'green';
+                    msgDiv.textContent = 'Administrador agregado correctamente.';
+                    document.getElementById('add-admin-form').reset();
+                } else {
+                    msgDiv.style.color = 'red';
+                    msgDiv.textContent = 'El usuario ya existe.';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
